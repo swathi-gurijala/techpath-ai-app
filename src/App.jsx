@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from 'firebase/firestore';
 
-// TEMPORARY DIAGNOSTIC STEP: HARDCODING FIREBASE CONFIG
-// DO NOT USE IN PRODUCTION. This is to test if environment variables are the issue.
+// IMPORTANT: Using environment variables for Firebase config
+// These values are loaded from your Vercel project's environment variables
+// For local development, you would put these in a .env file in your project root
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-  // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID // Optional
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID // Optional, for Google Analytics
 };
 
-
-// The appId should now come directly from the hardcoded firebaseConfig
+// The appId should now come from the environment variable
 const appId = firebaseConfig.appId;
 
 // Initialize Firebase App
@@ -41,7 +41,7 @@ const predefinedProjects = [
   { id: 'p1', name: 'E-commerce Website (Full Stack)', skills: ['Web Development', 'Python', 'Java', 'Databases'], category: 'Software Engineering', description: 'Develop a complete e-commerce platform with user authentication, product listings, shopping cart, and payment integration.' },
   { id: 'p2', name: 'Predictive Sales Model', skills: ['Python', 'Machine Learning', 'Data Visualization', 'SQL'], category: 'Data Science', description: 'Build a model to forecast sales based on historical data, marketing spend, and economic indicators.' },
   { id: 'p3', name: 'Image Classifier for Medical Diagnosis', skills: ['Python', 'Deep Learning', 'Computer Vision'], category: 'AI/ML', description: 'Create a CNN model to classify medical images (e.g., X-rays for pneumonia detection).' },
-  { id: 'p4', name: 'Automated Deployment Pipeline', skills: ['Linux', 'Docker', 'CI/CD', 'Cloud Computing'], category: 'DevOps', description: 'Set up an automated CI/CD pipeline for a web application using Jenkins/GitLab CI and deploy to a cloud platform.' },
+  { id: 'p4', name: 'Automated Deployment Pipeline', skills: ['Linux', 'Docker', 'Kubernetes', 'CI/CD', 'Cloud Computing'], category: 'DevOps', description: 'Set up an automated CI/CD pipeline for a web application using Jenkins/GitLab CI and deploy to a cloud platform.' },
   { id: 'p5', name: 'Smart Home Automation System', skills: ['Embedded Systems', 'C++', 'Python', 'IoT', 'Networking'], category: 'IoT', description: 'Develop a system to control smart home devices (lights, thermostat) using a Raspberry Pi and cloud connectivity.' },
   { id: 'p6', name: 'AR Navigation App', skills: ['Unity', 'C#', 'AR/VR', '3D Modeling'], category: 'AR/VR', description: 'Design and implement an augmented reality application for indoor navigation using Unity and ARCore/ARKit.' },
   { id: 'p7', name: 'Network Intrusion Detection System', skills: ['Python', 'Networking', 'Cybersecurity'], category: 'Cybersecurity', description: 'Build a system to detect malicious network activities using packet analysis and machine learning.' },
@@ -126,6 +126,10 @@ function App() {
   const [resumeUploaded, setResumeUploaded] = useState(false);
   const [resumeAnalysisReport, setResumeAnalysisReport] = useState(null);
 
+  // State for custom dropdown
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const branchDropdownRef = useRef(null); // Ref for clicking outside to close
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -156,7 +160,18 @@ function App() {
       }
     });
 
-    return () => unsubscribe();
+    // Handle clicks outside the custom dropdown to close it
+    const handleClickOutside = (event) => {
+      if (branchDropdownRef.current && !branchDropdownRef.current.contains(event.target)) {
+        setIsBranchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      unsubscribe();
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleProfileChange = (e) => {
@@ -260,7 +275,7 @@ function App() {
         skillImprovementPlan: [...prev.skillImprovementPlan, { id: crypto.randomUUID(), skill: newSkillToImprove, resource: newSkillResource, status: newSkillStatus }]
       }));
       setNewSkillToImprove('');
-      newSkillResource('');
+      setNewSkillResource('');
       setNewSkillStatus('Not Started');
       saveProfile(); // Save immediately
     } else {
@@ -573,7 +588,8 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-inter text-gray-800 flex flex-col">
+    // Added overflow-x-hidden to prevent horizontal scrolling
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-inter text-gray-800 flex flex-col overflow-x-hidden">
       {/* Removed Tailwind CSS CDN and Inter Font link from here. They should be in public/index.html */}
 
       {/* Header */}
@@ -584,6 +600,7 @@ function App() {
             <li><button onClick={() => setCurrentView('dashboard')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentView === 'dashboard' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'}`}>Dashboard</button></li>
             <li><button onClick={() => setCurrentView('profile')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentView === 'profile' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'}`}>My Profile</button></li>
             <li><button onClick={() => setCurrentView('skills')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentView === 'skills' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'}`}>Skills & Learning</button></li>
+            {/* Corrected duplicate className for Projects & Portfolio button */}
             <li><button onClick={() => setCurrentView('projects')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentView === 'projects' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'}`}>Projects & Portfolio</button></li>
             <li><button onClick={() => setCurrentView('opportunities')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentView === 'opportunities' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'}`}>Opportunities</button></li>
             <li><button onClick={() => setCurrentView('interview')} className={`px-4 py-2 rounded-lg font-medium transition-colors ${currentView === 'interview' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700'}`}>Interview Prep</button></li>
@@ -825,21 +842,64 @@ function App() {
           <div className="bg-white p-8 rounded-xl shadow-lg">
             <h2 className="text-3xl font-semibold text-indigo-700 mb-6">My Profile</h2>
             <div className="space-y-6">
-              {/* Branch Selection */}
-              <div>
+              {/* Branch Selection - Custom Dropdown */}
+              <div className="relative" ref={branchDropdownRef}>
                 <label htmlFor="branch" className="block text-lg font-medium text-gray-700 mb-2">Your B.Tech Branch:</label>
-                <select
-                  id="branch"
-                  name="branch"
-                  value={studentProfile.branch}
-                  onChange={handleProfileChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+                <button
+                  type="button"
+                  className="relative w-full cursor-default rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
+                  onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+                  aria-haspopup="listbox"
+                  aria-expanded={isBranchDropdownOpen ? 'true' : 'false'}
+                  aria-labelledby="listbox-label"
                 >
-                  <option value="">Select your branch</option>
-                  {predefinedBranches.map(branch => (
-                    <option key={branch} value={branch}>{branch}</option>
-                  ))}
-                </select>
+                  <span className="block truncate text-gray-900">
+                    {studentProfile.branch || 'Select your branch'}
+                  </span>
+                  <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    {/* Heroicon "Chevron Down" */}
+                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                </button>
+
+                {isBranchDropdownOpen && (
+                  <ul
+                    className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                    tabIndex="-1"
+                    role="listbox"
+                    aria-labelledby="listbox-label"
+                  >
+                    {predefinedBranches.map((branch) => (
+                      <li
+                        key={branch}
+                        className={`text-gray-900 relative cursor-default select-none py-2 pl-3 pr-9 ${
+                          branch === studentProfile.branch ? 'bg-indigo-600 text-white' : 'hover:bg-indigo-100 hover:text-indigo-900'
+                        }`}
+                        onClick={() => {
+                          setStudentProfile(prev => ({ ...prev, branch: branch }));
+                          setIsBranchDropdownOpen(false);
+                          saveProfile(); // Save immediately after selection
+                        }}
+                        role="option"
+                        aria-selected={branch === studentProfile.branch ? 'true' : 'false'}
+                      >
+                        <span className={`block truncate ${branch === studentProfile.branch ? 'font-semibold' : 'font-normal'}`}>
+                          {branch}
+                        </span>
+                        {branch === studentProfile.branch && (
+                          <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600">
+                            {/* Heroicon "Check" */}
+                            <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Target Roles Selection */}
