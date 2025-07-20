@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from 'firebase/firestore';
 
-// Global variables for Firebase config and app ID (provided by the Canvas environment)
-// IMPORTANT: For local development or cloud deployment, replace these with your actual Firebase project details.
-// See the setup instructions below for how to get these.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-career-navigator-app';
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null; // This is for Canvas environment auth
+// TEMPORARY DIAGNOSTIC STEP: HARDCODING FIREBASE CONFIG
+// DO NOT USE IN PRODUCTION. This is to test if environment variables are the issue.
+const firebaseConfig = {
+  apiKey: "AIzaSyA4bLkSD3v7usWFLOfHPqduD013DPK73Vs",
+  authDomain: "techpath-ai-app.firebaseapp.com",
+  projectId: "techpath-ai-app",
+  storageBucket: "techpath-ai-app.firebasestorage.app",
+  messagingSenderId: "294755278406",
+  appId: "1:294755278406:web:fd05e5ba354e5960b3b447"
+  // measurementId: "G-E1T363G7HH" // Optional, for Google Analytics
+};
+
+// The appId should now come directly from the hardcoded firebaseConfig
+const appId = firebaseConfig.appId;
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
@@ -33,7 +41,7 @@ const predefinedProjects = [
   { id: 'p2', name: 'Predictive Sales Model', skills: ['Python', 'Machine Learning', 'Data Visualization', 'SQL'], category: 'Data Science', description: 'Build a model to forecast sales based on historical data, marketing spend, and economic indicators.' },
   { id: 'p3', name: 'Image Classifier for Medical Diagnosis', skills: ['Python', 'Deep Learning', 'Computer Vision'], category: 'AI/ML', description: 'Create a CNN model to classify medical images (e.g., X-rays for pneumonia detection).' },
   { id: 'p4', name: 'Automated Deployment Pipeline', skills: ['Linux', 'Docker', 'CI/CD', 'Cloud Computing'], category: 'DevOps', description: 'Set up an automated CI/CD pipeline for a web application using Jenkins/GitLab CI and deploy to a cloud platform.' },
-  { id: 'p5', name: 'Smart Home Automation System', skills: ['Embedded Systems', 'Python', 'IoT', 'Networking'], category: 'IoT', description: 'Develop a system to control smart home devices (lights, thermostat) using a Raspberry Pi and cloud connectivity.' },
+  { id: 'p5', name: 'Smart Home Automation System', skills: ['Embedded Systems', 'C++', 'Python', 'IoT', 'Networking'], category: 'IoT', description: 'Develop a system to control smart home devices (lights, thermostat) using a Raspberry Pi and cloud connectivity.' },
   { id: 'p6', name: 'AR Navigation App', skills: ['Unity', 'C#', 'AR/VR', '3D Modeling'], category: 'AR/VR', description: 'Design and implement an augmented reality application for indoor navigation using Unity and ARCore/ARKit.' },
   { id: 'p7', name: 'Network Intrusion Detection System', skills: ['Python', 'Networking', 'Cybersecurity'], category: 'Cybersecurity', description: 'Build a system to detect malicious network activities using packet analysis and machine learning.' },
   { id: 'p8', name: 'Sentiment Analysis for Social Media', skills: ['Python', 'Natural Language Processing', 'Machine Learning'], category: 'AI/ML', description: 'Analyze social media posts to determine public sentiment towards a brand or topic.' },
@@ -128,28 +136,16 @@ function App() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setStudentProfile(data);
-          // Check if resume was previously uploaded
           if (data.resumeURL) {
             setResumeUploaded(true);
-            // Mock a report if a resume was previously uploaded
-            setResumeAnalysisReport({
-              skillsIdentified: ['Python', 'Java', 'Web Development', 'SQL'],
-              suggestedImprovements: ['Add more quantifiable achievements to project descriptions.', 'Tailor summary to specific job roles.'],
-              keywordOptimization: ['Data Structures', 'Algorithms', 'Cloud Computing']
-            });
+            setResumeAnalysisReport({ /* mock data */ });
           }
         }
         setLoading(false);
       } else {
-        // Sign in anonymously if no user and no custom token
+        // Sign in anonymously if no user is authenticated
         try {
-          // In a local/deployed environment, you would remove the initialAuthToken check
-          // and directly call signInAnonymously or other auth methods.
-          if (initialAuthToken) {
-            await signInWithCustomToken(auth, initialAuthToken);
-          } else {
-            await signInAnonymously(auth);
-          }
+          await signInAnonymously(auth);
         } catch (error) {
           console.error("Error signing in:", error);
           setModalMessage(`Error signing in: ${error.message}`);
@@ -263,7 +259,7 @@ function App() {
         skillImprovementPlan: [...prev.skillImprovementPlan, { id: crypto.randomUUID(), skill: newSkillToImprove, resource: newSkillResource, status: newSkillStatus }]
       }));
       setNewSkillToImprove('');
-      setNewSkillResource('');
+      newSkillResource('');
       setNewSkillStatus('Not Started');
       saveProfile(); // Save immediately
     } else {
@@ -532,10 +528,10 @@ function App() {
         plan.push({
           time: '2:00 PM - 4:00 PM',
           activity: `${item.skill} (Skill Improvement: ${item.resource})`,
-          type: 'Skill Development'
-        });
-      }
-    });
+        type: 'Skill Development'
+      });
+    }
+  });
 
     // Example: Project work
     if (studentProfile.projectsCompleted.length > 0) {
@@ -577,10 +573,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-inter text-gray-800 flex flex-col">
-      {/* Tailwind CSS CDN */}
-      <script src="https://cdn.tailwindcss.com"></script>
-      {/* Inter Font */}
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      {/* Removed Tailwind CSS CDN and Inter Font link from here. They should be in public/index.html */}
 
       {/* Header */}
       <header className="bg-white shadow-md py-4 px-6 flex justify-between items-center rounded-b-lg">
@@ -1390,7 +1383,7 @@ function App() {
                         <h4 className="text-xl font-semibold text-green-800 mb-2">{internship.name}</h4>
                         <p className="text-gray-700 text-sm mb-2">{internship.description}</p>
                         <p className="text-gray-600 text-sm"><span className="font-medium">Skills:</span> {internship.skills.join(', ')}</p>
-                        <p className="text-600 text-sm"><span className="font-medium">Branches:</span> {internship.branch.join(', ')}</p>
+                        <p className="text-gray-600 text-sm"><span className="font-medium">Branches:</span> {internship.branch.join(', ')}</p>
                       </div>
                     ))}
                   </div>
