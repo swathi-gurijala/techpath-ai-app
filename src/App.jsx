@@ -6,14 +6,15 @@ import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from 'fireb
 // TEMPORARY DIAGNOSTIC STEP: HARDCODING FIREBASE CONFIG
 // DO NOT USE IN PRODUCTION. This is to test if environment variables are the issue.
 const firebaseConfig = {
-  apiKey: "AIzaSyA4bLkSD3v7usWFLOfHPqduD013DPK73Vs",
-  authDomain: "techpath-ai-app.firebaseapp.com",
-  projectId: "techpath-ai-app",
-  storageBucket: "techpath-ai-app.firebasestorage.app",
-  messagingSenderId: "294755278406",
-  appId: "1:294755278406:web:fd05e5ba354e5960b3b447"
-  // measurementId: "G-E1T363G7HH" // Optional, for Google Analytics
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  // measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID // Optional
 };
+
 
 // The appId should now come directly from the hardcoded firebaseConfig
 const appId = firebaseConfig.appId;
